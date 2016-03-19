@@ -23,8 +23,9 @@ $c = Get-AzureRmContext
  }
 
 # Just need to fill out these, update the DeploymentID each run (increment by 1)
-[validaterange(1,999)]                         [string]$DeploymentID = 100
-[validateset('Dev','Test','Prod')]              [string]$Environment = 'Test'
+[validaterange(1,999)]                      [string]$DeploymentID = 351
+[validateset('Dev','Test','Prod')]          [string]$Environment = 'Test'
+[ValidateSet("Standard_LRS","Standard_GRS")][String]$StorageType = "Standard_LRS"
 [validateset("Contoso.com","AlpineSkiHouse.com")][String]$DomainName = 'Contoso.com'
 [validateset("eastus","eastus2","westus","centralus")][String]$Location  = 'eastus'
                                                       [String]$AdminUser = 'BRW'
@@ -50,6 +51,10 @@ else
     Write-Warning "$addnsName is taken, choose another name"
 } 
 
+ # Create new RG, unless you have an alternate to deploy into, this allows update anyway.
+New-AzureRmResourceGroup -Name $rgname -Location $Location
+#New-AzureRmStorageAccount -ResourceGroupName $rgname -Name $saname -Location $Location -Type $StorageType
+
 #-------------------------------------------------------------------------------------------------------------------------------
 
 # For DSC zip archive, Zip all of the DSC stuff up and send it to Azure Blob where it can be picked up by the Azure VM's.
@@ -59,7 +64,7 @@ $StorageAccountResourceGroupName = 'rgGlobal'
 $StorageAccountName              = 'saeastus01'
 
 # Create the connection to read the DSC zip file in blob storage (alternatively you could host the zip file on GitHub)
-$StorageContainerName = $rgname.ToLowerInvariant() + '-stageartifacts'
+$StorageContainerName = $rgname.ToLowerInvariant() + '-stageartifactps'
 $StorageAccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Key1
 $StorageAccountContext = (Get-AzureRmStorageAccount -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Context
 
@@ -82,9 +87,6 @@ $AzCopyPath = 'C:\Program Files (x86)\Microsoft SDKs\Azure\AzCopy\AzCopy.exe'
 
 #-------------------------------------------------------------------------------------------------------------------------------#>
 
- # Create new RG, unless you have an alternate to deploy into, this allows update anyway.
-New-AzureRmResourceGroup -Name $rgname -Location $Location
-
 # These are the parameters on the deployment that are defined in the JSON template
 # they are set above.
 $MyParams = @{
@@ -103,6 +105,7 @@ $SplatParams = @{
     TemplateParameterObject = $MyParams
     Name                    = 'ContosoForest'
     Verbose                 = $true
+    Force                   = $true
    }
 
 Write-Verbose "The storage sas token key is in the clipboard, so you can just ctrl + V to paste it in to the pop up" -verbose
