@@ -127,6 +127,10 @@ if (Test-Path -Path $RDPFileDirectory)
 		Get-AzureRmRemoteDesktopFile -LocalPath ($RDPFileDirectory + '/' + $_.Name + '.RDP') -ResourceGroupName $rgname -Name $_.Name
 	}
 }
+else
+{
+    Write-warning -Message "if you se the $RDPFileDirectory, the script will download the Azure VM RDP files for you"
+}
 
 
 break
@@ -149,7 +153,8 @@ $ExtName = "vmdsc" + (-join $VMName[-3..-1])
     }
 }
 
-# Optionally connect to the VM's
+# Optionally connect to the VM's in a scaled size RDP window
+# https://gallery.technet.microsoft.com/scriptcenter/Start-RDP-MSTSC-in-a-74367a0d
 Start-Rdp -FilePath ($RDPFileDirectory + "\vm${Deployment}DC1.rdp")
 Start-Rdp -FilePath ($RDPFileDirectory + "\vm${Deployment}DC2.rdp")
 Start-Rdp -FilePath ($RDPFileDirectory + "\vm${Deployment}MS1.rdp")
