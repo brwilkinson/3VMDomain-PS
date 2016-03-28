@@ -4,7 +4,7 @@ Param (
 		[String]$DomainName = 'Contoso.com',
 		[PSCredential]$AdminCreds,
 		[Int]$RetryCount = 20,
-		[Int]$RetryIntervalSec = 60
+		[Int]$RetryIntervalSec = 120
 		)
 
 Import-DscResource -ModuleName PSDesiredStateConfiguration
