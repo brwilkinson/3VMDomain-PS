@@ -91,7 +91,7 @@ $ArtifactsLocation = $StorageAccountContext.BlobEndPoint + $StorageContainerName
 $DSCFilePath = "$ProjectPath\DSC\*"
 Compress-Archive -Path $DSCFilePath -DestinationPath "$ProjectPath\Staging\dsc.zip" -Force
 $AzCopyPath = 'C:\Program Files (x86)\Microsoft SDKs\Azure\AzCopy\AzCopy.exe'
-& $AzCopyPath "/Source:D:\Azure\DSCTemp", "/Dest:$ArtifactsLocation", "/DestKey:$StorageAccountKey", "/S", "/Y", "/Z:$env:LocalAppData\Microsoft\Azure\AzCopy\$rgname"
+& $AzCopyPath "/Source:$ProjectPath\Staging", "/Dest:$ArtifactsLocation", "/DestKey:$StorageAccountKey", "/S", "/Y", "/Z:$env:LocalAppData\Microsoft\Azure\AzCopy\$rgname"
 
 #-------------------------------------------------------------------------------------------------------------------------------#>
 
