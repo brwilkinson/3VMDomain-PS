@@ -13,14 +13,14 @@ Import-DscResource -ModuleName xStorage
 
 [PSCredential]$DomainCreds = New-Object System.Management.Automation.PSCredential ("$DomainName\$($AdminCreds.UserName)", $AdminCreds.Password)
 
-Node $AllNodes.Where({$_.NodeName -eq 'DC1'}).NodeName
+Node $AllNodes.Where({$_.Role -eq 'PDC'}).NodeName
 {
     Write-Verbose -Message $Nodename -Verbose
 
 	LocalConfigurationManager
     {
         ActionAfterReboot   = 'ContinueConfiguration'
-        ConfigurationMode   = 'ApplyAndAutoCorrect'
+        ConfigurationMode   = 'ApplyAndMonitor'
         RebootNodeIfNeeded  = $true
         AllowModuleOverWrite = $true
     }

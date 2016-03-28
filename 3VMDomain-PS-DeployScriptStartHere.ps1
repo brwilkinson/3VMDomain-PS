@@ -28,7 +28,7 @@ $c = Get-AzureRmContext
 [ValidateSet("Standard_LRS","Standard_GRS")][String]$StorageType = "Standard_LRS"
 [validateset("Contoso.com","AlpineSkiHouse.com")][String]$DomainName = 'Contoso.com'
 [validateset("eastus","eastus2","westus","centralus")][String]$Location  = 'eastus'
-                                                      [String]$AdminUser = 'BRW'
+                                                      [String]$AdminUser = 'ARMAdmin'
 $ProjectPath = "$home\Documents\GitHub\3VMDomain-PS"
 $TemplateFile = "$ProjectPath\Templates\azuredeploy.json"
 
@@ -42,6 +42,7 @@ $saname    = ('sa' + $Deployment).ToLower()     # Lowercase required
 $addnsName = ('mycontoso' + $Deployment).ToLower() # Lowercase required
 
 # check that the public dns name $addnsName is available
+# I actually append the name of the DC onto the end of the addnsname
 if (Test-AzureRmDnsAvailability -DomainNameLabel $addnsName -Location $Location)
 {
     Write-Verbose "$addnsName is available, all good" -Verbose
@@ -49,24 +50,31 @@ if (Test-AzureRmDnsAvailability -DomainNameLabel $addnsName -Location $Location)
 else
 {
     Write-Warning "$addnsName is taken, choose another name"
-} 
+    break
+}
 
  # Create new RG, unless you have an alternate to deploy into, this allows update anyway.
 New-AzureRmResourceGroup -Name $rgname -Location $Location
-#New-AzureRmStorageAccount -ResourceGroupName $rgname -Name $saname -Location $Location -Type $StorageType
 
 #-------------------------------------------------------------------------------------------------------------------------------
 
 # For DSC zip archive, Zip all of the DSC stuff up and send it to Azure Blob where it can be picked up by the Azure VM's.
 
 # Storage details just for the Zip for DSC resources * update these just for the first run
-$StorageAccountResourceGroupName = 'rgGlobal'
+$StorageAccountResourceGroupName = 'rgGlobal123'
 $StorageAccountName              = 'saeastus01'
-
-# Create the connection to read the DSC zip file in blob storage (alternatively you could host the zip file on GitHub)
-$StorageContainerName = $rgname.ToLowerInvariant() + '-stageartifactps'
-$StorageAccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Key1
-$StorageAccountContext = (Get-AzureRmStorageAccount -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Context
+try {
+    # Create the connection to read the DSC zip file in blob storage (alternatively you could host the zip file on GitHub)
+    $StorageContainerName = $rgname.ToLowerInvariant() + '-stageartifactps'
+    $StorageAccountKey = (Get-AzureRmStorageAccountKey -EA stop -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Key1
+    $StorageAccountContext = (Get-AzureRmStorageAccount -EA stop -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Context
+}
+Catch
+{
+    $_
+    write-warning -Message "Setup the storage account for your DSC assets first"
+    break
+}
 
 $StorageTokenParams = @{
 	Container  = $StorageContainerName 
@@ -103,7 +111,7 @@ $SplatParams = @{
     TemplateFile            = $TemplateFile
     ResourceGroupName       = $rgname 
     TemplateParameterObject = $MyParams
-    Name                    = 'ContosoForest'
+    Name                    = 'LABContosoForest'
     Verbose                 = $true
     Force                   = $true
    }
@@ -120,3 +128,28 @@ if (Test-Path -Path $RDPFileDirectory)
 	}
 }
 
+
+break
+
+# Using the following to check the DSC Extension status if they did not succeed
+Get-AzureRmVM -ResourceGroupName $rgname -PipelineVariable VM | Foreach {      # vmTest635MS1/vmdscMS1                
+$VMName = $VM.Name
+$ExtName = "vmdsc" + (-join $VMName[-3..-1])
+    Write-Verbose -Message $VMName -Verbose
+    Get-AzureRmVMDscExtension -ResourceGroupName $rgname -VMName $VMName -Name $ExtName -OutVariable status
+
+    if ($status.ProvisioningState -ne 'Succeeded')
+    {
+        Get-AzureRmVMDscExtensionStatus -ResourceGroupName $rgname -VMName $VMName -Name $ExtName | ForEach-Object {
+            
+            Write-Verbose -Message $_.Status -Verbose
+            Write-Verbose -Message $_.StatusMessage -Verbose
+            $_.DscConfigurationLog
+        }
+    }
+}
+
+# Optionally connect to the VM's
+Start-Rdp -FilePath ($RDPFileDirectory + "\vm${Deployment}DC1.rdp")
+Start-Rdp -FilePath ($RDPFileDirectory + "\vm${Deployment}DC2.rdp")
+Start-Rdp -FilePath ($RDPFileDirectory + "\vm${Deployment}MS1.rdp")

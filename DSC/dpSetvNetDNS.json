@@ -1,0 +1,66 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "Deployment": {
+      "type": "string"
+    },
+    "DNSServers": {
+      "type": "array",
+      "defaultValue": [ "10.0.0.10", "10.0.0.10" ]
+    }
+  },
+
+  "variables": {
+    // Network
+    "snPrefix": "10.0.0.0/16",
+    "snName01": "[concat('sn', parameters('Deployment'),'-01')]",
+    "snName01Prefix": "10.0.0.0/24",
+    "snName02": "[concat('sn', parameters('Deployment'),'-02')]",
+    "snName02Prefix": "10.0.1.0/24",
+
+    "VnetID": "[resourceId('Microsoft.Network/virtualNetworks', concat('vn',parameters('Deployment')))]",
+    "SubnetRef": "[concat(variables('VnetID'), '/subnets/', variables('snName01'))]"
+  },
+  "resources": [
+    {
+      "name": "[concat('vn',Parameters('Deployment'))]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "vNet"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('snPrefix')]"
+          ]
+        },
+        "dhcpOptions": {
+          "dnsServers": [
+            "[parameters('DNSServers')[0]]",
+            "[parameters('DNSServers')[1]]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('snName01')]",
+            "properties": {
+              "addressPrefix": "[variables('snName01Prefix')]"
+            }
+          },
+          {
+            "name": "[variables('snName02')]",
+            "properties": {
+              "addressPrefix": "[variables('snName02Prefix')]"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
+
+
