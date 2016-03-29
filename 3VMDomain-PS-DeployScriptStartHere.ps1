@@ -23,7 +23,7 @@ $c = Get-AzureRmContext
  }
 
 # Just need to fill out these, update the DeploymentID each run (increment by 1)
-[validaterange(1,999)]                      [string]$DeploymentID = 351
+[validaterange(1,999)]                      [string]$DeploymentID = 352
 [validateset('Dev','Test','Prod')]          [string]$Environment = 'Test'
 [ValidateSet("Standard_LRS","Standard_GRS")][String]$StorageType = "Standard_LRS"
 [validateset("Contoso.com","AlpineSkiHouse.com")][String]$DomainName = 'Contoso.com'
@@ -61,7 +61,7 @@ New-AzureRmResourceGroup -Name $rgname -Location $Location
 # For DSC zip archive, Zip all of the DSC stuff up and send it to Azure Blob where it can be picked up by the Azure VM's.
 
 # Storage details just for the Zip for DSC resources * update these just for the first run
-$StorageAccountResourceGroupName = 'rgGlobal123'
+$StorageAccountResourceGroupName = 'rgGlobal01'
 $StorageAccountName              = 'saeastus01'
 try {
     # Create the connection to read the DSC zip file in blob storage (alternatively you could host the zip file on GitHub)
@@ -129,7 +129,7 @@ if (Test-Path -Path $RDPFileDirectory)
 }
 else
 {
-    Write-warning -Message "if you se the $RDPFileDirectory, the script will download the Azure VM RDP files for you"
+    Write-warning -Message "if you set the `$RDPFileDirectory path, the script will download the Azure VM RDP files for you"
 }
 
 
