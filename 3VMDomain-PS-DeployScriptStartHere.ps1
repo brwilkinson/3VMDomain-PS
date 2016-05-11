@@ -23,7 +23,7 @@ $c = Get-AzureRmContext
  }
 
 # Just need to fill out these, update the DeploymentID each run (increment by 1)
-[validaterange(1,999)]                      [string]$DeploymentID = 352
+[validaterange(1,999)]                      [string]$DeploymentID = 354
 [validateset('Dev','Test','Prod')]          [string]$Environment = 'Test'
 [ValidateSet("Standard_LRS","Standard_GRS")][String]$StorageType = "Standard_LRS"
 [validateset("Contoso.com","AlpineSkiHouse.com")][String]$DomainName = 'Contoso.com'
@@ -61,13 +61,13 @@ New-AzureRmResourceGroup -Name $rgname -Location $Location
 # For DSC zip archive, Zip all of the DSC stuff up and send it to Azure Blob where it can be picked up by the Azure VM's.
 
 # Storage details just for the Zip for DSC resources * update these just for the first run
-$StorageAccountResourceGroupName = 'rgGlobal01'
+$StorageAccountResourceGroupName = 'rgGlobal'
 $StorageAccountName              = 'saeastus01'
 try {
     # Create the connection to read the DSC zip file in blob storage (alternatively you could host the zip file on GitHub)
     $StorageContainerName = $rgname.ToLowerInvariant() + '-stageartifactps'
-    $StorageAccountKey = (Get-AzureRmStorageAccountKey -EA stop -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Key1
-    $StorageAccountContext = (Get-AzureRmStorageAccount -EA stop -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName).Context
+    $StorageAccountKey = (Get-AzureRmStorageAccountKey -EA stop -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName)[0].Key1
+    $StorageAccountContext = (Get-AzureRmStorageAccount -EA stop -ResourceGroupName $StorageAccountResourceGroupName -Name $StorageAccountName)[0].Context
 }
 Catch
 {
